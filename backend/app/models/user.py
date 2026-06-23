@@ -1,0 +1,44 @@
+import uuid
+from sqlalchemy import Column, String, Boolean, DateTime, Integer, JSON, ForeignKey
+from sqlalchemy.orm import relationship
+from app.db.database import Base
+from datetime import datetime
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    email = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    full_name = Column(String, nullable=True)
+    role = Column(String, default="student")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    preferences = relationship("StudentPreference", back_populates="user", uselist=False)
+
+class StudentPreference(Base):
+    __tablename__ = "student_preferences"
+    
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), unique=True, index=True)
+    kcet_rank = Column(Integer, nullable=True)
+    category = Column(String, nullable=True)
+    is_rural = Column(Boolean, default=False)
+    is_kannada = Column(Boolean, default=False)
+    preferred_branches = Column(JSON, nullable=True)
+    preferred_locations = Column(JSON, nullable=True)
+    max_budget = Column(Integer, nullable=True)
+    counselling_round = Column(String, default="Mock")
+    
+    user = relationship("User", back_populates="preferences")
+
+class Shortlist(Base):
+    __tablename__ = "shortlists"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), index=True)
+    college_code = Column(String, index=True)
+    branch_code = Column(String, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", backref="shortlists")

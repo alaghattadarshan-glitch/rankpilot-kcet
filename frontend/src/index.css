@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply font-sans bg-surface-hover text-slate-900 transition-colors duration-300;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
+  }
+  
+  .dark body {
+    @apply bg-slate-900 text-slate-50;
+  }
+}
+
+@layer components {
+  .rankpilot-card {
+    @apply bg-surface rounded-[20px] p-6 shadow-soft border border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-hover;
+  }
+  
+  .dark .rankpilot-card {
+    @apply bg-slate-800 border-slate-700 shadow-none hover:bg-slate-800/90;
+  }
+
+  .rankpilot-input {
+    @apply w-full rounded-[16px] border border-slate-200 px-4 py-3 shadow-sm focus:border-primary-500 focus:ring-primary-500 bg-white transition-all duration-200;
+  }
+
+  .dark .rankpilot-input {
+    @apply bg-slate-800 border-slate-700 text-white focus:border-primary-500 focus:ring-primary-500;
+  }
+
+  .rankpilot-button {
+    @apply flex items-center justify-center rounded-[16px] font-semibold transition-all duration-200 hover:scale-[1.03] active:scale-95 disabled:opacity-50 disabled:hover:scale-100;
+  }
+}
