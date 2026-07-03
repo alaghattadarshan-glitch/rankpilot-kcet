@@ -181,6 +181,20 @@ def get_recommendations(db: Session, user_id: str = None, test_rank: int = None,
             "type": type_label
         })
 
+    # Pre-index all_predictions to optimize nested searches from O(N^2) to O(N)
+    college_branches = {}
+    district_branch_predictions = {}
+    for p in all_predictions:
+        c_code = p['college_code']
+        if c_code not in college_branches:
+            college_branches[c_code] = []
+        college_branches[c_code].append(p)
+        
+        db_key = (p['district'], p['branch_code'])
+        if db_key not in district_branch_predictions:
+            district_branch_predictions[db_key] = []
+        district_branch_predictions[db_key].append(p)
+
     results = []
     
     for rec in all_predictions:
@@ -195,17 +209,16 @@ def get_recommendations(db: Session, user_id: str = None, test_rank: int = None,
             
         alt_branches = []
         if rec['branch_code'] == 'CS':
-            alt_branches = [p for p in all_predictions if p['college_code'] == rec['college_code'] and p['branch_code'] in ['IS', 'AI', 'DS']]
+            alt_branches = [p for p in college_branches.get(rec['college_code'], []) if p['branch_code'] in ['IS', 'AI', 'DS']]
         elif rec['branch_code'] == 'IS':
-            alt_branches = [p for p in all_predictions if p['college_code'] == rec['college_code'] and p['branch_code'] in ['CS', 'AI', 'DS']]
+            alt_branches = [p for p in college_branches.get(rec['college_code'], []) if p['branch_code'] in ['CS', 'AI', 'DS']]
             
         rec['alternative_branches'] = [{"branch_name": a['branch_name'], "latest_cutoff": a['latest_cutoff']} for a in alt_branches]
         
+        similar_candidates = district_branch_predictions.get((rec['district'], rec['branch_code']), [])
         similar = [
-            p for p in all_predictions 
-            if p['district'] == rec['district'] 
-            and p['college_code'] != rec['college_code']
-            and p['branch_code'] == rec['branch_code']
+            p for p in similar_candidates
+            if p['college_code'] != rec['college_code']
             and 0.85 * rec['latest_cutoff'] <= p['latest_cutoff'] <= 1.15 * rec['latest_cutoff']
         ]
         similar.sort(key=lambda x: abs(x['latest_cutoff'] - rec['latest_cutoff']))
