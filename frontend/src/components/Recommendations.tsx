@@ -129,6 +129,10 @@ export default function Recommendations() {
                     <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300">
                       {item.college_code}
                     </span>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold border ${typeStyle.color}`}>
+                      {typeStyle.icon}
+                      {typeStyle.label}
+                    </span>
                     {item.warning && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold animate-pulse">
                         {item.warning}

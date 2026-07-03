@@ -1,13 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Home, Target, ListChecks, Scale, BarChart2, Rocket, Heart, Settings, LogOut, Bell, Moon, Sun } from 'lucide-react';
-import PreferencesForm from '../components/PreferencesForm';
-import Recommendations from '../components/Recommendations';
-import CollegeComparison from '../components/CollegeComparison';
-import OptionEntry from '../components/OptionEntry';
-import Analytics from '../components/Analytics';
-import AdminPanel from '../components/AdminPanel';
-import Simulator from '../components/Simulator';
+import { Target, ListChecks, Scale, BarChart2, Rocket, LogOut, Bell, Moon, Sun, Shield } from 'lucide-react';
+
+const PreferencesForm = lazy(() => import('../components/PreferencesForm'));
+const Recommendations = lazy(() => import('../components/Recommendations'));
+const CollegeComparison = lazy(() => import('../components/CollegeComparison'));
+const OptionEntry = lazy(() => import('../components/OptionEntry'));
+const Analytics = lazy(() => import('../components/Analytics'));
+const AdminPanel = lazy(() => import('../components/AdminPanel'));
+const Simulator = lazy(() => import('../components/Simulator'));
+
+const TabLoader = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+  </div>
+);
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -104,13 +111,15 @@ export default function Dashboard() {
         {/* Scrollable Page Content */}
         <div className="flex-1 overflow-auto p-8">
           <div className="max-w-7xl mx-auto">
-            {activeTab === 'preferences' && <PreferencesForm />}
-            {activeTab === 'recommendations' && <Recommendations />}
-            {activeTab === 'compare' && <CollegeComparison />}
-            {activeTab === 'option-entry' && <OptionEntry />}
-            {activeTab === 'analytics' && <Analytics />}
-            {activeTab === 'simulator' && <Simulator />}
-            {activeTab === 'admin' && user?.email === 'admin@kcet.ai' && <AdminPanel />}
+            <Suspense fallback={<TabLoader />}>
+              {activeTab === 'preferences' && <PreferencesForm />}
+              {activeTab === 'recommendations' && <Recommendations />}
+              {activeTab === 'compare' && <CollegeComparison />}
+              {activeTab === 'option-entry' && <OptionEntry />}
+              {activeTab === 'analytics' && <Analytics />}
+              {activeTab === 'simulator' && <Simulator />}
+              {activeTab === 'admin' && user?.email === 'admin@kcet.ai' && <AdminPanel />}
+            </Suspense>
           </div>
         </div>
       </div>

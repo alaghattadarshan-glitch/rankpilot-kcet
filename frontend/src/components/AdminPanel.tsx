@@ -2,14 +2,24 @@ import { useState, useEffect } from 'react';
 import { apiClient } from '../api/client';
 import { Database, Users, Building, Upload, AlertCircle, CheckCircle } from 'lucide-react';
 
+import type { ReactNode } from 'react';
+
+const StatCard = ({ title, value, icon, color }: { title: string, value: number, icon: ReactNode, color: string }) => (
+  <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+    <div className={`p-4 rounded-full ${color} bg-opacity-10 text-${color.split('-')[1]}-600`}>
+      {icon}
+    </div>
+    <div>
+      <p className="text-sm font-medium text-gray-500">{title}</p>
+      <p className="text-2xl font-bold text-gray-900">{value.toLocaleString()}</p>
+    </div>
+  </div>
+);
+
 export default function AdminPanel() {
   const [stats, setStats] = useState({ total_users: 0, total_colleges: 0, total_branches: 0, total_cutoffs: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [uploadStatus, setUploadStatus] = useState<{type: string, message: string, error: boolean} | null>(null);
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
 
   const fetchStats = async () => {
     try {
@@ -21,6 +31,10 @@ export default function AdminPanel() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -37,6 +51,7 @@ export default function AdminPanel() {
       });
       setUploadStatus({ type, message: 'Upload successful. Backend ingestion script required.', error: false });
     } catch (err) {
+      console.error('File upload failed:', err);
       setUploadStatus({ type, message: 'Upload failed.', error: true });
     }
   };
@@ -51,18 +66,6 @@ export default function AdminPanel() {
       </div>
     );
   }
-
-  const StatCard = ({ title, value, icon, color }: { title: string, value: number, icon: any, color: string }) => (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
-      <div className={`p-4 rounded-full ${color} bg-opacity-10 text-${color.split('-')[1]}-600`}>
-        {icon}
-      </div>
-      <div>
-        <p className="text-sm font-medium text-gray-500">{title}</p>
-        <p className="text-2xl font-bold text-gray-900">{value.toLocaleString()}</p>
-      </div>
-    </div>
-  );
 
   return (
     <div className="max-w-5xl mx-auto">
