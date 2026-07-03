@@ -26,8 +26,15 @@ def get_recommendations(db: Session, user_id: str = None, test_rank: int = None,
         max_budget = test_prefs.get('budget') if test_prefs else None
         selected_round = test_prefs.get('round', 'Mock') if test_prefs else 'Mock'
 
-    colleges = db.query(College).all()
+    college_query = db.query(College)
+    if preferred_locs:
+        college_query = college_query.filter(College.district.in_(preferred_locs))
+    colleges = college_query.all()
     college_map = {c.code: c for c in colleges}
+    valid_college_codes = list(college_map.keys())
+
+    if preferred_locs and not valid_college_codes:
+        return {"all_recommendations": [], "safe": [], "moderate": [], "dream": [], "_all_predictions": []}
 
     branches = db.query(Branch).all()
     branch_map = {b.code: b for b in branches}
@@ -42,7 +49,12 @@ def get_recommendations(db: Session, user_id: str = None, test_rank: int = None,
     placements = db.query(Placement).all()
     placement_map = {p.college_code: p for p in placements}
 
-    seat_matrices = db.query(SeatMatrix).filter(SeatMatrix.category == category).all()
+    seat_query = db.query(SeatMatrix).filter(SeatMatrix.category == category)
+    if preferred_branches:
+        seat_query = seat_query.filter(SeatMatrix.branch_code.in_(preferred_branches))
+    if preferred_locs:
+        seat_query = seat_query.filter(SeatMatrix.college_code.in_(valid_college_codes))
+    seat_matrices = seat_query.all()
     seat_map = {(s.college_code, s.branch_code): s.seats_available for s in seat_matrices}
 
     if selected_round == 'Mock':
@@ -56,7 +68,12 @@ def get_recommendations(db: Session, user_id: str = None, test_rank: int = None,
     else:
         valid_rounds = [selected_round]
 
-    cutoffs = db.query(Cutoff).filter(Cutoff.category == category, Cutoff.round.in_(valid_rounds)).all()
+    cutoff_query = db.query(Cutoff).filter(Cutoff.category == category, Cutoff.round.in_(valid_rounds))
+    if preferred_branches:
+        cutoff_query = cutoff_query.filter(Cutoff.branch_code.in_(preferred_branches))
+    if preferred_locs:
+        cutoff_query = cutoff_query.filter(Cutoff.college_code.in_(valid_college_codes))
+    cutoffs = cutoff_query.all()
     
     history_map = {}
     for ctf in cutoffs:
@@ -248,8 +265,15 @@ def get_round_comparison(db: Session, user_id: str):
     preferred_locs = pref.preferred_locations or []
     preferred_branches = pref.preferred_branches or []
 
-    colleges = db.query(College).all()
+    college_query = db.query(College)
+    if preferred_locs:
+        college_query = college_query.filter(College.district.in_(preferred_locs))
+    colleges = college_query.all()
     college_map = {c.code: c for c in colleges}
+    valid_college_codes = list(college_map.keys())
+
+    if preferred_locs and not valid_college_codes:
+        return {}
 
     branches = db.query(Branch).all()
     branch_map = {b.code: b for b in branches}
@@ -261,7 +285,12 @@ def get_round_comparison(db: Session, user_id: str):
         {"id": "Round3", "valid": ['Round3']}
     ]
 
-    all_cutoffs = db.query(Cutoff).filter(Cutoff.category == category).all()
+    cutoff_query = db.query(Cutoff).filter(Cutoff.category == category)
+    if preferred_branches:
+        cutoff_query = cutoff_query.filter(Cutoff.branch_code.in_(preferred_branches))
+    if preferred_locs:
+        cutoff_query = cutoff_query.filter(Cutoff.college_code.in_(valid_college_codes))
+    all_cutoffs = cutoff_query.all()
 
     comparison_results = {}
 
