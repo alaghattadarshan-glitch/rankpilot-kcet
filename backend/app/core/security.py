@@ -11,7 +11,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 def get_password_hash(password: str) -> str:
-    salt = bcrypt.gensalt()
+    salt = bcrypt.gensalt(rounds=8)
     return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
