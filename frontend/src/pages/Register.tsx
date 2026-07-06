@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiClient } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ export default function Register() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +41,18 @@ export default function Register() {
         full_name: fullName,
         password
       });
-      navigate('/login');
+
+      // Auto-login after registration to avoid signing in again manually
+      const formData = new FormData();
+      formData.append('username', email);
+      formData.append('password', password);
+      
+      const loginResponse = await apiClient.post('/auth/login', formData, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      });
+      
+      login(loginResponse.data.access_token);
+      navigate('/dashboard');
     } catch (err: any) {
       const detail = err.response?.data?.detail;
       if (Array.isArray(detail)) {

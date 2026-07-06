@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { apiClient } from '../api/client';
-import { Mail, Phone, MapPin, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, MapPin, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function ContactUs() {
   const [name, setName] = useState('');
@@ -76,16 +76,6 @@ export default function ContactUs() {
                 <a href="mailto:alaghattadarshan@gmail.com" className="text-sm font-semibold hover:text-blue-600">
                   alaghattadarshan@gmail.com
                 </a>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-xl">
-                <Phone className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Call Support</p>
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">+91 98765 43210</p>
               </div>
             </div>
 
