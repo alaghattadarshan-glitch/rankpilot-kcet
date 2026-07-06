@@ -194,7 +194,7 @@ export default function PreferencesForm() {
         </div>
 
         {/* Checkboxes */}
-        <div className="flex space-x-8">
+        <div className="flex flex-wrap gap-x-8 gap-y-3">
           <div className="flex items-center">
             <input
               id="is_rural"
@@ -204,7 +204,7 @@ export default function PreferencesForm() {
               onChange={handleChange}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <label htmlFor="is_rural" className="ml-2 block text-sm text-gray-900">Rural Quota</label>
+            <label htmlFor="is_rural" className="ml-2 block text-sm text-gray-900 dark:text-slate-300">Rural Quota</label>
           </div>
           <div className="flex items-center">
             <input
@@ -215,7 +215,7 @@ export default function PreferencesForm() {
               onChange={handleChange}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            <label htmlFor="is_kannada" className="ml-2 block text-sm text-gray-900">Kannada Medium Quota</label>
+            <label htmlFor="is_kannada" className="ml-2 block text-sm text-gray-900 dark:text-slate-300">Kannada Medium Quota</label>
           </div>
         </div>
 

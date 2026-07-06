@@ -96,14 +96,14 @@ export default function Recommendations() {
   return (
     <div className="max-w-5xl mx-auto pb-12 space-y-8">
       {/* Student Summary Header */}
-      <div className="rankpilot-card flex justify-between items-center bg-gradient-to-r from-primary-50 to-surface dark:from-primary-900/20 dark:to-slate-800">
+      <div className="rankpilot-card flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-gradient-to-r from-primary-50 to-surface dark:from-primary-900/20 dark:to-slate-800">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
-            <User className="w-8 h-8 text-primary-600 dark:text-primary-400" /> Option Entry Generator
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
+            <User className="w-7 h-7 sm:w-8 sm:h-8 text-primary-600 dark:text-primary-400" /> Option Entry Generator
           </h2>
           <p className="text-slate-600 dark:text-slate-400 mt-2 font-medium">Rank {prefs.kcet_rank} • Category: {prefs.category || 'GM'} • {items.length} colleges eligible.</p>
         </div>
-        <div className="text-right bg-white dark:bg-slate-900 p-4 rounded-[16px] shadow-sm border border-slate-100 dark:border-slate-700">
+        <div className="text-right bg-white dark:bg-slate-900 p-4 rounded-[16px] shadow-sm border border-slate-100 dark:border-slate-700 self-start sm:self-auto">
           <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Shortlisted</div>
           <div className="text-3xl font-bold text-pink-500 flex items-center gap-2 justify-end">{shortlist.length} <Heart className="w-6 h-6 fill-pink-500 text-pink-500" /></div>
         </div>

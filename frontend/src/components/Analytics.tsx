@@ -184,12 +184,12 @@ export default function Analytics() {
              <Activity className="w-6 h-6" />
              <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">Seat Availability Trend</h3>
            </div>
-           <div className="flex items-center justify-between mb-6">
+           <div className="flex flex-wrap items-center justify-around gap-4 mb-6">
              <div className="text-center">
                <div className="text-xs font-bold text-slate-500 uppercase">2024</div>
                <div className="font-bold text-2xl text-slate-900 dark:text-slate-100">{data.seat_trend["2024"]}</div>
              </div>
-             <div className="text-slate-400 font-bold">→</div>
+             <div className="text-slate-400 font-bold text-xl">→</div>
              <div className="text-center">
                <div className="text-xs font-bold text-slate-500 uppercase">2025</div>
                <div className="font-bold text-2xl text-slate-900 dark:text-slate-100">{data.seat_trend["2025"]}</div>

@@ -16,6 +16,15 @@ const TabLoader = () => (
   </div>
 );
 
+const TAB_LABELS: Record<string, string> = {
+  preferences: 'My Preferences',
+  recommendations: 'Recommendations',
+  compare: 'Compare Colleges',
+  analytics: 'Analytics',
+  simulator: 'Round Simulator',
+  'option-entry': 'Option Entry',
+};
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('preferences');
@@ -110,6 +119,9 @@ export default function Dashboard() {
             >
               <Menu className="w-6 h-6" />
             </button>
+            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 lg:hidden">
+              {TAB_LABELS[activeTab] || 'RankPilot'}
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors">
@@ -133,7 +145,7 @@ export default function Dashboard() {
         </header>
 
         {/* Scrollable Page Content */}
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-4 sm:p-8">
           <div className="max-w-7xl mx-auto">
             <Suspense fallback={<TabLoader />}>
               {activeTab === 'preferences' && <PreferencesForm />}
