@@ -122,6 +122,15 @@ export default function Register() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+              <div className="mt-2 text-xs text-gray-500 space-y-1">
+                <p className="font-semibold text-gray-600">Password Requirements:</p>
+                <ul className="list-disc pl-4 space-y-0.5 font-medium text-slate-500">
+                  <li>At least 8 characters long</li>
+                  <li>Must start with a capital letter</li>
+                  <li>Contains at least one number</li>
+                  <li>Contains at least one special character (e.g. !, @, #, $, %, etc.)</li>
+                </ul>
+              </div>
             </div>
           </div>
 

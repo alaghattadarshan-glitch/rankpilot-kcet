@@ -17,9 +17,13 @@ export default function PreferencesForm() {
     counselling_round: 'Mock'
   });
 
-  const categories = ['1G', '1R', '1K', '2AG', '2AR', '2AK', '2BG', '2BR', '2BK', '3AG', '3AR', '3AK', '3BG', '3BR', '3BK', 'GM', 'GMR', 'GMK', 'SCG', 'SCR', 'SCK', 'STG', 'STR', 'STK'];
+  const categories = [
+    '1G', '1R', '1K', '2AG', '2AR', '2AK', '2BG', '2BR', '2BK', '3AG', '3AR', '3AK', '3BG', '3BR', '3BK', 'GM', 'GMR', 'GMK',
+    'SCG', 'SCR', 'SCK', 'S1G', 'S1R', 'S1K', 'S2G', 'S2R', 'S2K', 'S3G', 'S3R', 'S3K', 'S4G', 'S4R', 'S4K',
+    'STG', 'STR', 'STK'
+  ];
   const rounds = [
-    { id: 'Mock', name: 'Mock Round' },
+    { id: 'Mock', name: '2026 Mock Round' },
     { id: 'Round1', name: 'Round 1' },
     { id: 'Round2', name: 'Round 2' },
     { id: 'Round3', name: 'Round 3' }

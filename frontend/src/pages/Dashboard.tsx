@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Target, ListChecks, Scale, BarChart2, Rocket, LogOut, Bell, Moon, Sun, Shield, Phone } from 'lucide-react';
+import { Target, ListChecks, Scale, BarChart2, Rocket, LogOut, Bell, Moon, Sun, Shield, Phone, Menu, X } from 'lucide-react';
 
 const PreferencesForm = lazy(() => import('../components/PreferencesForm'));
 const Recommendations = lazy(() => import('../components/Recommendations'));
@@ -20,6 +20,7 @@ export default function Dashboard() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('preferences');
   const [isDark, setIsDark] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (isDark) {
@@ -31,37 +32,51 @@ export default function Dashboard() {
 
   return (
     <div className="flex h-screen bg-surface-hover transition-colors duration-300">
+      {/* Sidebar Overlay for Mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 lg:hidden transition-opacity duration-300"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <div className="w-[260px] bg-surface border-r border-slate-200 dark:border-slate-700 flex flex-col shadow-soft z-20">
-        <div className="p-6">
+      <div className={`fixed inset-y-0 left-0 z-40 w-[280px] lg:w-[260px] bg-surface border-r border-slate-200 dark:border-slate-700 flex flex-col shadow-soft transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:flex transition-transform duration-300 ease-in-out`}>
+        <div className="p-6 relative">
           <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-500 flex items-center gap-2">
             🚀 RankPilot
           </h2>
           <p className="text-xs text-slate-500 mt-1 dark:text-slate-400">Navigate Your Engineering Future</p>
+          <button 
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 absolute top-4 right-4"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
         
         <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
-          <button onClick={() => setActiveTab('preferences')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'preferences' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+          <button onClick={() => { setActiveTab('preferences'); setIsSidebarOpen(false); }} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'preferences' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
             <Target className="w-5 h-5" /><span>My Preferences</span>
           </button>
           
-          <button onClick={() => setActiveTab('recommendations')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'recommendations' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+          <button onClick={() => { setActiveTab('recommendations'); setIsSidebarOpen(false); }} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'recommendations' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
             <ListChecks className="w-5 h-5" /><span>Recommendations</span>
           </button>
           
-          <button onClick={() => setActiveTab('compare')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'compare' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+          <button onClick={() => { setActiveTab('compare'); setIsSidebarOpen(false); }} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'compare' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
             <Scale className="w-5 h-5" /><span>Compare Colleges</span>
           </button>
           
-          <button onClick={() => setActiveTab('analytics')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'analytics' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+          <button onClick={() => { setActiveTab('analytics'); setIsSidebarOpen(false); }} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'analytics' ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
             <BarChart2 className="w-5 h-5" /><span>Analytics</span>
           </button>
 
-          <button onClick={() => setActiveTab('simulator')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'simulator' ? 'bg-secondary-50 text-secondary-600 dark:bg-secondary-900/30 dark:text-secondary-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+          <button onClick={() => { setActiveTab('simulator'); setIsSidebarOpen(false); }} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'simulator' ? 'bg-secondary-50 text-secondary-600 dark:bg-secondary-900/30 dark:text-secondary-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
             <Rocket className="w-5 h-5" /><span>Round Simulator</span>
           </button>
 
-          <button onClick={() => setActiveTab('option-entry')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'option-entry' ? 'bg-accent-50 text-accent-600 dark:bg-accent-900/30 dark:text-accent-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+          <button onClick={() => { setActiveTab('option-entry'); setIsSidebarOpen(false); }} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'option-entry' ? 'bg-accent-50 text-accent-600 dark:bg-accent-900/30 dark:text-accent-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
             <ListChecks className="w-5 h-5" /><span>Option Entry</span>
           </button>
 
@@ -87,9 +102,14 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col overflow-hidden relative">
         
         {/* Sticky Header */}
-        <header className="sticky top-0 z-10 bg-surface/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 h-16 flex items-center justify-between px-8 shadow-sm">
+        <header className="sticky top-0 z-10 bg-surface/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 h-16 flex items-center justify-between px-4 sm:px-8 shadow-sm">
           <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-semibold">
-            {/* Header left */}
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="lg:hidden p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 mr-2"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
           </div>
           <div className="flex items-center gap-4">
             <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors">

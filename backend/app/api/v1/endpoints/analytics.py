@@ -98,15 +98,26 @@ def get_student_insights(
 
     # 4. Category Analysis
     cat = pref.category or "GM"
-    # To compare with GM, we do a quick count in db
-    cat_2025 = db.query(func.count(Cutoff.id)).filter(
-        Cutoff.year == 2025, Cutoff.category == cat, Cutoff.cutoff_rank >= R
-    ).scalar()
-    gm_2025 = db.query(func.count(Cutoff.id)).filter(
-        Cutoff.year == 2025, Cutoff.category == 'GM', Cutoff.cutoff_rank >= R
-    ).scalar()
+    latest_year = db.query(func.max(Cutoff.year)).scalar() or 2025
+    prev_year = latest_year - 1
     
-    additional_vs_gm = max(0, cat_2025 - gm_2025) if cat != 'GM' else 0
+    cat_prev = cat
+    if latest_year == 2026 and cat.startswith(('S1', 'S2', 'S3', 'S4')):
+        if cat.endswith('G'):
+            cat_prev = 'SCG'
+        elif cat.endswith('K'):
+            cat_prev = 'SCK'
+        elif cat.endswith('R'):
+            cat_prev = 'SCR'
+
+    cat_latest = db.query(func.count(Cutoff.id)).filter(
+        Cutoff.year == latest_year, Cutoff.category == cat, Cutoff.cutoff_rank >= R
+    ).scalar() or 0
+    gm_latest = db.query(func.count(Cutoff.id)).filter(
+        Cutoff.year == latest_year, Cutoff.category == 'GM', Cutoff.cutoff_rank >= R
+    ).scalar() or 0
+    
+    additional_vs_gm = max(0, cat_latest - gm_latest) if cat != 'GM' else 0
 
     category_analysis = {
         "category": cat,
@@ -154,17 +165,16 @@ def get_student_insights(
             t = "➡ Stable"
         branch_demand.append({"branch": b, "trend": t})
 
-    # 7. Seat Availability Trend (2024 vs 2025)
-    # Count colleges where student was eligible in 2024 vs 2025
-    c_2024 = db.query(func.count(Cutoff.id)).filter(
-        Cutoff.year == 2024, Cutoff.category == cat, Cutoff.cutoff_rank >= R
-    ).scalar()
-    c_2025 = cat_2025
+    # 7. Seat Availability Trend (prev vs latest year)
+    c_prev = db.query(func.count(Cutoff.id)).filter(
+        Cutoff.year == prev_year, Cutoff.category == cat_prev, Cutoff.cutoff_rank >= R
+    ).scalar() or 0
+    c_latest = cat_latest
     
     seat_trend = {
-        "2024": c_2024,
-        "2025": c_2025,
-        "trend": "⬆ Opportunities increasing" if c_2025 > c_2024 else "⬇ Opportunities decreasing" if c_2025 < c_2024 else "➡ Opportunities stable"
+        str(prev_year): c_prev,
+        str(latest_year): c_latest,
+        "trend": "⬆ Opportunities increasing" if c_latest > c_prev else "⬇ Opportunities decreasing" if c_latest < c_prev else "➡ Opportunities stable"
     }
 
     # 8. Counsellor Tips

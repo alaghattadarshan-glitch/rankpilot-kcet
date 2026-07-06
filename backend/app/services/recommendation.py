@@ -79,42 +79,56 @@ def get_recommendations(db: Session, user_id: str = None, test_rank: int = None,
     for ctf in cutoffs:
         key = (ctf.college_code, ctf.branch_code)
         if key not in history_map:
-            history_map[key] = {'2024': [], '2025': []}
+            history_map[key] = {'2024': [], '2025': [], '2026': []}
         if ctf.year == 2024:
             history_map[key]['2024'].append(ctf.cutoff_rank)
         elif ctf.year == 2025:
             history_map[key]['2025'].append(ctf.cutoff_rank)
+        elif ctf.year == 2026:
+            history_map[key]['2026'].append(ctf.cutoff_rank)
 
     all_predictions = []
     
     for (c_code, b_code), rounds in history_map.items():
         all_2024 = rounds['2024']
         all_2025 = rounds['2025']
+        all_2026 = rounds['2026']
         
-        if not all_2024 and not all_2025:
+        if not all_2024 and not all_2025 and not all_2026:
             continue
             
-        if all_2025:
+        if all_2026:
+            latest_cutoff = max(all_2026)
+        elif all_2025:
             latest_cutoff = max(all_2025)
         else:
             latest_cutoff = max(all_2024)
             
-        all_rounds = all_2024 + all_2025
+        all_rounds = all_2024 + all_2025 + all_2026
         avg_cutoff = sum(all_rounds) / len(all_rounds)
         
         diff_max_min = max(all_rounds) - min(all_rounds)
         volatility = diff_max_min / max(1, avg_cutoff)
         
-        if len(set([2024 if all_2024 else None, 2025 if all_2025 else None]) - {None}) >= 2:
+        years_present = {y for y, rlist in [('2024', all_2024), ('2025', all_2025), ('2026', all_2026)] if rlist}
+        if len(years_present) >= 2:
             confidence = "🟡 Medium Confidence" if len(all_rounds) < 3 else "🟢 High Confidence"
         else:
             confidence = "🔴 Low Confidence"
 
         trend = "➡ Stable"
-        if all_2024 and all_2025:
-            max_24 = max(all_2024)
-            max_25 = max(all_2025)
-            diff = max_25 - max_24
+        if all_2026 and all_2025:
+            max_curr = max(all_2026)
+            max_prev = max(all_2025)
+            diff = max_curr - max_prev
+            if diff > 1000:
+                trend = "⬇ Becoming Easier"
+            elif diff < -1000:
+                trend = "⬆ Becoming Competitive"
+        elif all_2025 and all_2024:
+            max_curr = max(all_2025)
+            max_prev = max(all_2024)
+            diff = max_curr - max_prev
             if diff > 1000:
                 trend = "⬇ Becoming Easier"
             elif diff < -1000:
@@ -304,20 +318,25 @@ def get_round_comparison(db: Session, user_id: str):
         for ctf in cutoffs:
             key = (ctf.college_code, ctf.branch_code)
             if key not in history_map:
-                history_map[key] = {'2024': [], '2025': []}
+                history_map[key] = {'2024': [], '2025': [], '2026': []}
             if ctf.year == 2024:
                 history_map[key]['2024'].append(ctf.cutoff_rank)
             elif ctf.year == 2025:
                 history_map[key]['2025'].append(ctf.cutoff_rank)
+            elif ctf.year == 2026:
+                history_map[key]['2026'].append(ctf.cutoff_rank)
 
         results = []
         for (c_code, b_code), rounds in history_map.items():
             all_2024 = rounds['2024']
             all_2025 = rounds['2025']
-            if not all_2024 and not all_2025:
+            all_2026 = rounds['2026']
+            if not all_2024 and not all_2025 and not all_2026:
                 continue
                 
-            if all_2025:
+            if all_2026:
+                latest_cutoff = max(all_2026)
+            elif all_2025:
                 latest_cutoff = max(all_2025)
             else:
                 latest_cutoff = max(all_2024)

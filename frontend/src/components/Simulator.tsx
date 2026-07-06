@@ -31,7 +31,7 @@ export default function Simulator() {
   const [isLoading, setIsLoading] = useState(true);
 
   const rounds = [
-    { id: 'Mock', label: 'Mock Round' },
+    { id: 'Mock', label: '2026 Mock Round' },
     { id: 'Round1', label: 'Round 1' },
     { id: 'Round2', label: 'Round 2' },
     { id: 'Round3', label: 'Round 3' }

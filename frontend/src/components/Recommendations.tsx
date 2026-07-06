@@ -124,20 +124,22 @@ export default function Recommendations() {
                 </div>
                 
                 <div className="flex-grow min-w-0">
-                  <div className="flex items-center gap-3 mb-1.5">
+                  <div className="flex flex-col md:flex-row md:items-center gap-2 mb-1.5">
                     <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 truncate">{item.college_name}</h3>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300">
-                      {item.college_code}
-                    </span>
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold border ${typeStyle.color}`}>
-                      {typeStyle.icon}
-                      {typeStyle.label}
-                    </span>
-                    {item.warning && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold animate-pulse">
-                        {item.warning}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-300">
+                        {item.college_code}
                       </span>
-                    )}
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold border ${typeStyle.color}`}>
+                        {typeStyle.icon}
+                        {typeStyle.label}
+                      </span>
+                      {item.warning && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold animate-pulse">
+                          {item.warning}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="text-sm font-semibold text-secondary-600 dark:text-secondary-400 flex items-center gap-2">
                     <Building className="w-4 h-4" /> {item.branch_name}
