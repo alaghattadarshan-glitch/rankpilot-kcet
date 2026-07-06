@@ -41,7 +41,14 @@ export default function Register() {
       });
       navigate('/login');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+      const detail = err.response?.data?.detail;
+      if (Array.isArray(detail)) {
+        setError(detail.map((d: any) => d.msg).join(', ').replace(/Value error, /g, ''));
+      } else if (typeof detail === 'string') {
+        setError(detail);
+      } else {
+        setError('Registration failed. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
