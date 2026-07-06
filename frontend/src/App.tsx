@@ -8,6 +8,8 @@ const Register = lazy(() => import('./pages/Register'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
+const ContactUs = lazy(() => import('./pages/ContactUs'));
+
 const PageLoader = () => (
   <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-500">
     <div className="flex flex-col items-center">
@@ -56,6 +58,7 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/contact" element={<ContactUs />} />
             <Route path="/" element={<Navigate to="/dashboard" />} />
           </Routes>
         </Suspense>

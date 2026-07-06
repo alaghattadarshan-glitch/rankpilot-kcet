@@ -19,7 +19,8 @@ import {
   Building,
   MapPin,
   GitBranch,
-  Clock
+  Clock,
+  Trash2
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import {
@@ -65,15 +66,28 @@ interface FeedbackLog {
   rejected: number;
 }
 
+interface ContactInquiry {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string;
+  message: string;
+  submitted_date: string;
+  status: string; // New, Read, Replied, Closed
+}
+
 export default function AdminDashboard() {
   const { logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'feedback' | 'logins'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'feedback' | 'logins' | 'contacts' | 'health'>('analytics');
   
   // Data states
   const [users, setUsers] = useState<UserData[]>([]);
   const [analytics, setAnalytics] = useState<any>(null);
   const [logins, setLogins] = useState<LoginLog[]>([]);
   const [feedback, setFeedback] = useState<FeedbackLog[]>([]);
+  const [contacts, setContacts] = useState<ContactInquiry[]>([]);
+  const [systemHealth, setSystemHealth] = useState<any>(null);
   
   // UI states
   const [isLoading, setIsLoading] = useState(true);
@@ -95,16 +109,20 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [usersRes, analyticsRes, loginsRes, feedbackRes] = await Promise.all([
+      const [usersRes, analyticsRes, loginsRes, feedbackRes, contactsRes, healthRes] = await Promise.all([
         apiClient.get('/admin/users'),
         apiClient.get('/admin/analytics'),
         apiClient.get('/admin/logins'),
-        apiClient.get('/admin/feedback')
+        apiClient.get('/admin/feedback'),
+        apiClient.get('/admin/contacts'),
+        apiClient.get('/admin/system-health')
       ]);
       setUsers(usersRes.data);
       setAnalytics(analyticsRes.data);
       setLogins(loginsRes.data);
       setFeedback(feedbackRes.data);
+      setContacts(contactsRes.data);
+      setSystemHealth(healthRes.data);
     } catch (err) {
       console.error('Error fetching admin dashboard data:', err);
     } finally {
@@ -122,6 +140,38 @@ export default function AdminDashboard() {
     } else {
       setSortField(field);
       setSortDirection('desc');
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    const confirm = window.confirm("Are you sure you want to permanently delete this user and all associated records?");
+    if (!confirm) return;
+    try {
+      await apiClient.delete(`/admin/user/${userId}`);
+      alert("User and all associated records permanently deleted successfully.");
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to delete user.");
+    }
+  };
+
+  const handleUpdateContactStatus = async (contactId: string, newStatus: string) => {
+    try {
+      await apiClient.patch(`/admin/contact/${contactId}/status`, { status: newStatus });
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to update contact status.");
+    }
+  };
+
+  const handleDeleteContact = async (contactId: string) => {
+    const confirm = window.confirm("Are you sure you want to permanently delete this contact inquiry?");
+    if (!confirm) return;
+    try {
+      await apiClient.delete(`/admin/contact/${contactId}`);
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to delete contact inquiry.");
     }
   };
 
@@ -284,6 +334,18 @@ export default function AdminDashboard() {
           </button>
 
           <button
+            onClick={() => { setActiveTab('contacts'); setCurrentPage(1); }}
+            className={`flex w-full items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              activeTab === 'contacts'
+                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+            }`}
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span>Contact Inquiries</span>
+          </button>
+
+          <button
             onClick={() => { setActiveTab('logins'); setCurrentPage(1); }}
             className={`flex w-full items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
               activeTab === 'logins'
@@ -293,6 +355,18 @@ export default function AdminDashboard() {
           >
             <Clock className="w-5 h-5" />
             <span>Security Audit Logs</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('health'); setCurrentPage(1); }}
+            className={`flex w-full items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              activeTab === 'health'
+                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+            }`}
+          >
+            <Activity className="w-5 h-5" />
+            <span>System Health</span>
           </button>
         </nav>
         
@@ -315,7 +389,9 @@ export default function AdminDashboard() {
             {activeTab === 'analytics' && 'Analytics & Operations Console'}
             {activeTab === 'users' && 'User Directory'}
             {activeTab === 'feedback' && 'Recommendation Feedback Tracking'}
+            {activeTab === 'contacts' && 'Contact Inquiries'}
             {activeTab === 'logins' && 'Security Audits'}
+            {activeTab === 'health' && 'System Health & Dataset Status'}
           </div>
           <div className="flex items-center gap-4">
             <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-semibold px-3 py-1 rounded-full uppercase">
@@ -627,6 +703,7 @@ export default function AdminDashboard() {
                             <div className="flex items-center gap-1">Last Login <ArrowUpDown className="w-3 h-3" /></div>
                           </th>
                           <th className="px-6 py-4">Role</th>
+                          <th className="px-6 py-4">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
@@ -658,11 +735,22 @@ export default function AdminDashboard() {
                                   {user.role}
                                 </span>
                               </td>
+                              <td className="px-6 py-4">
+                                {user.role !== 'admin' && (
+                                  <button
+                                    onClick={() => handleDeleteUser(user.id)}
+                                    className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded transition-colors"
+                                    title="Delete User"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </td>
                             </tr>
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={9} className="px-6 py-12 text-center text-slate-400 font-medium italic">
+                            <td colSpan={10} className="px-6 py-12 text-center text-slate-400 font-medium italic">
                               No matching users found inside database directory.
                             </td>
                           </tr>
@@ -758,7 +846,82 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            {/* TAB 4: SECURITY AUDIT LOGS */}
+            {/* TAB 4: CONTACT INQUIRIES */}
+            {activeTab === 'contacts' && (
+              <div className="space-y-6">
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Public Contact Inquiry Submissions</h3>
+                  <p className="text-sm text-slate-500">View and manage support inquiries received via the contact page.</p>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-400 uppercase text-xs font-semibold">
+                          <th className="px-6 py-4">Name</th>
+                          <th className="px-6 py-4">Email</th>
+                          <th className="px-6 py-4">Phone</th>
+                          <th className="px-6 py-4">Subject</th>
+                          <th className="px-6 py-4">Message</th>
+                          <th className="px-6 py-4">Submitted</th>
+                          <th className="px-6 py-4">Status</th>
+                          <th className="px-6 py-4">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                        {contacts.length > 0 ? (
+                          contacts.map((c, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                              <td className="px-6 py-4 font-bold text-slate-900 dark:text-white truncate max-w-[150px]">{c.name}</td>
+                              <td className="px-6 py-4 font-semibold text-slate-500">{c.email}</td>
+                              <td className="px-6 py-4 font-medium text-slate-500">{c.phone || 'N/A'}</td>
+                              <td className="px-6 py-4 font-bold text-slate-800 dark:text-slate-200 truncate max-w-[160px]" title={c.subject}>{c.subject}</td>
+                              <td className="px-6 py-4 text-xs font-medium text-slate-500 truncate max-w-[200px]" title={c.message}>{c.message}</td>
+                              <td className="px-6 py-4 text-xs text-slate-400">{new Date(c.submitted_date).toLocaleDateString()}</td>
+                              <td className="px-6 py-4">
+                                <select
+                                  value={c.status}
+                                  onChange={(e) => handleUpdateContactStatus(c.id, e.target.value)}
+                                  className={`text-xs font-bold px-2.5 py-1 rounded-md border ${
+                                    c.status === 'New' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                    c.status === 'Read' ? 'bg-slate-50 text-slate-600 border-slate-200' :
+                                    c.status === 'Replied' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                    'bg-emerald-50 text-emerald-700 border-emerald-200' // Closed
+                                  }`}
+                                >
+                                  <option value="New">New</option>
+                                  <option value="Read">Read</option>
+                                  <option value="Replied">Replied</option>
+                                  <option value="Closed">Closed</option>
+                                </select>
+                              </td>
+                              <td className="px-6 py-4">
+                                <button
+                                  onClick={() => handleDeleteContact(c.id)}
+                                  className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded transition-colors"
+                                  title="Delete Inquiry"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={8} className="px-6 py-12 text-center text-slate-400 font-medium italic">
+                              No contact submissions registered.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 5: SECURITY AUDIT LOGS */}
             {activeTab === 'logins' && (
               <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center gap-3">
@@ -799,6 +962,106 @@ export default function AdminDashboard() {
                         <tr>
                           <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-medium italic">
                             No security login records found.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 6: SYSTEM HEALTH */}
+            {activeTab === 'health' && systemHealth && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {/* Backend Server Status */}
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Backend Status</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping"></span>
+                      <h4 className="text-xl font-bold text-emerald-600">{systemHealth.backend_status}</h4>
+                    </div>
+                  </div>
+
+                  {/* Database Status */}
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Database Status</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${systemHealth.database_status === 'Healthy' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                      <h4 className="text-xl font-bold text-slate-900 dark:text-white">{systemHealth.database_status}</h4>
+                    </div>
+                  </div>
+
+                  {/* AI Model Status */}
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">AI Quantile Predictor</p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${systemHealth.ai_model_status === 'Loaded' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
+                      <h4 className="text-xl font-bold text-slate-900 dark:text-white">{systemHealth.ai_model_status}</h4>
+                    </div>
+                  </div>
+
+                  {/* Last Dataset Update */}
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Dataset Update</p>
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-200 mt-2 truncate">
+                      {systemHealth.last_dataset_update !== 'Never updated'
+                        ? new Date(systemHealth.last_dataset_update).toLocaleString()
+                        : 'Never Updated'}
+                    </h4>
+                  </div>
+                </div>
+
+                {/* Model Training status */}
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-2">Model Ingestion & Training Logs</h4>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Last automatic ML models training completion time: 
+                    <span className="font-semibold text-slate-700 dark:text-slate-200 ml-1">
+                      {systemHealth.last_model_training_time !== 'Never trained'
+                        ? new Date(systemHealth.last_model_training_time).toLocaleString()
+                        : 'Never Trained'}
+                    </span>
+                  </p>
+                </div>
+
+                {/* Dataset Table */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                  <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+                    <h3 className="text-md font-bold text-slate-900 dark:text-white">Active Database Datasets</h3>
+                  </div>
+                  <table className="w-full text-left border-collapse text-sm">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-400 uppercase text-xs font-semibold">
+                        <th className="px-6 py-4">Dataset Name</th>
+                        <th className="px-6 py-4 text-center">Year</th>
+                        <th className="px-6 py-4 text-center">Round</th>
+                        <th className="px-6 py-4 text-center">Data Rows</th>
+                        <th className="px-6 py-4">Last Modified</th>
+                        <th className="px-6 py-4 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                      {systemHealth.datasets && systemHealth.datasets.length > 0 ? (
+                        systemHealth.datasets.map((d: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                            <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{d.dataset_name}</td>
+                            <td className="px-6 py-4 text-center font-semibold text-slate-500">{d.year}</td>
+                            <td className="px-6 py-4 text-center font-medium text-slate-500">{d.round}</td>
+                            <td className="px-6 py-4 text-center font-bold text-blue-600 dark:text-blue-400">{d.rows.toLocaleString()}</td>
+                            <td className="px-6 py-4 text-xs text-slate-400">{new Date(d.last_modified).toLocaleString()}</td>
+                            <td className="px-6 py-4 text-right">
+                              <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-md text-xs font-bold uppercase">
+                                {d.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-medium italic">
+                            No loaded cutoff datasets found. Run pipeline ingestion.
                           </td>
                         </tr>
                       )}

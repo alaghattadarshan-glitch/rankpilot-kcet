@@ -77,3 +77,15 @@ class FeedbackLog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", backref="feedback_logs_records")
+
+class ContactInquiry(Base):
+    __tablename__ = "contact_inquiries"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    phone = Column(String, nullable=True)
+    subject = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    submitted_date = Column(DateTime, default=datetime.utcnow)
+    status = Column(String, default="New") # New, Read, Replied, Closed

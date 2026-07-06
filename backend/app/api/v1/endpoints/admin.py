@@ -7,7 +7,7 @@ import subprocess
 from datetime import datetime, timedelta
 
 from app.db.database import get_db
-from app.models.user import User, StudentPreference, Shortlist, LoginHistory, ActivityLog, FeedbackLog
+from app.models.user import User, StudentPreference, Shortlist, LoginHistory, ActivityLog, FeedbackLog, ContactInquiry
 from app.models.college import College, Branch
 from app.models.cutoff import Cutoff
 from app.api.deps import get_current_active_admin
@@ -290,3 +290,182 @@ def get_admin_feedback(
         })
         
     return results
+
+
+from sqlalchemy.sql import text
+
+@router.get("/user/{user_id}")
+def get_admin_user_detail(
+    user_id: str,
+    current_admin: User = Depends(get_current_active_admin),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    pref = user.preferences
+    return {
+        "id": user.id,
+        "name": user.full_name,
+        "email": user.email,
+        "role": user.role,
+        "created_at": user.created_at,
+        "last_login": user.last_login,
+        "category": pref.category if pref else None,
+        "kcet_rank": pref.kcet_rank if pref else None,
+        "preferred_branches": pref.preferred_branches if pref else [],
+        "preferred_locations": pref.preferred_locations if pref else []
+    }
+
+
+@router.delete("/user/{user_id}")
+def delete_admin_user(
+    user_id: str,
+    current_admin: User = Depends(get_current_active_admin),
+    db: Session = Depends(get_db)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Prevent self deletion
+    if user.id == current_admin.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own administrator account.")
+
+    # Cascading delete all associated tables
+    db.query(FeedbackLog).filter(FeedbackLog.user_id == user_id).delete()
+    db.query(ActivityLog).filter(ActivityLog.user_id == user_id).delete()
+    db.query(LoginHistory).filter(LoginHistory.user_id == user_id).delete()
+    db.query(Shortlist).filter(Shortlist.user_id == user_id).delete()
+    db.query(StudentPreference).filter(StudentPreference.user_id == user_id).delete()
+    db.delete(user)
+    db.commit()
+    
+    return {"message": "User and all associated records permanently deleted successfully."}
+
+
+@router.get("/system-health")
+def get_system_health(
+    current_admin: User = Depends(get_current_active_admin),
+    db: Session = Depends(get_db)
+):
+    # 1. Database Status
+    try:
+        db.execute(text("SELECT 1")).scalar()
+        db_status = "Healthy"
+    except Exception:
+        db_status = "Unhealthy"
+
+    # 2. AI Model Status
+    models_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../ai/models"))
+    model_median_path = os.path.join(models_dir, "cutoff_model_median.pkl")
+    ai_status = "Loaded" if os.path.exists(model_median_path) else "Not Loaded"
+    
+    last_trained = "Never trained"
+    if os.path.exists(model_median_path):
+        mtime = os.path.getmtime(model_median_path)
+        last_trained = datetime.fromtimestamp(mtime).isoformat()
+
+    # 3. Last Dataset Update
+    colleges_csv = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../colleges.csv"))
+    last_dataset_update = "Never updated"
+    if os.path.exists(colleges_csv):
+        mtime_csv = os.path.getmtime(colleges_csv)
+        last_dataset_update = datetime.fromtimestamp(mtime_csv).isoformat()
+
+    # 4. Dataset Monitoring
+    datasets = db.query(
+        Cutoff.year,
+        Cutoff.round,
+        func.count(Cutoff.id).label("rows")
+    ).group_by(Cutoff.year, Cutoff.round).all()
+    
+    dataset_monitoring = []
+    for yr, rnd, rows in datasets:
+        dataset_monitoring.append({
+            "dataset_name": f"KCET {yr} {rnd} Cutoffs",
+            "year": yr,
+            "round": rnd,
+            "rows": rows,
+            "upload_date": last_dataset_update if last_dataset_update != "Never updated" else datetime.utcnow().date().isoformat(),
+            "last_modified": last_dataset_update if last_dataset_update != "Never updated" else datetime.utcnow().date().isoformat(),
+            "status": "Active"
+        })
+
+    return {
+        "backend_status": "Healthy",
+        "database_status": db_status,
+        "ai_model_status": ai_status,
+        "last_dataset_update": last_dataset_update,
+        "last_model_training_time": last_trained,
+        "datasets": dataset_monitoring
+    }
+
+
+@router.get("/contacts")
+def get_admin_contacts(
+    current_admin: User = Depends(get_current_active_admin),
+    db: Session = Depends(get_db)
+):
+    contacts = db.query(ContactInquiry).order_by(ContactInquiry.submitted_date.desc()).all()
+    return [
+        {
+            "id": c.id,
+            "name": c.name,
+            "email": c.email,
+            "phone": c.phone,
+            "subject": c.subject,
+            "message": c.message,
+            "submitted_date": c.submitted_date,
+            "status": c.status
+        }
+        for c in contacts
+    ]
+
+
+@router.get("/contact/{contact_id}")
+def get_admin_contact_detail(
+    contact_id: str,
+    current_admin: User = Depends(get_current_active_admin),
+    db: Session = Depends(get_db)
+):
+    contact = db.query(ContactInquiry).filter(ContactInquiry.id == contact_id).first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact inquiry not found")
+    return contact
+
+
+@router.delete("/contact/{contact_id}")
+def delete_admin_contact(
+    contact_id: str,
+    current_admin: User = Depends(get_current_active_admin),
+    db: Session = Depends(get_db)
+):
+    contact = db.query(ContactInquiry).filter(ContactInquiry.id == contact_id).first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact inquiry not found")
+    db.delete(contact)
+    db.commit()
+    return {"message": "Contact inquiry deleted successfully"}
+
+
+@router.patch("/contact/{contact_id}/status")
+def update_admin_contact_status(
+    contact_id: str,
+    status_update: dict,
+    current_admin: User = Depends(get_current_active_admin),
+    db: Session = Depends(get_db)
+):
+    contact = db.query(ContactInquiry).filter(ContactInquiry.id == contact_id).first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact inquiry not found")
+    
+    new_status = status_update.get("status")
+    if new_status not in ["New", "Read", "Replied", "Closed"]:
+        raise HTTPException(status_code=400, detail="Invalid status option")
+        
+    contact.status = new_status
+    db.commit()
+    db.refresh(contact)
+    return contact

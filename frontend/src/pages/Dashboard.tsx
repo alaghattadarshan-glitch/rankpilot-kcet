@@ -1,6 +1,6 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Target, ListChecks, Scale, BarChart2, Rocket, LogOut, Bell, Moon, Sun, Shield } from 'lucide-react';
+import { Target, ListChecks, Scale, BarChart2, Rocket, LogOut, Bell, Moon, Sun, Shield, Phone } from 'lucide-react';
 
 const PreferencesForm = lazy(() => import('../components/PreferencesForm'));
 const Recommendations = lazy(() => import('../components/Recommendations'));
@@ -64,11 +64,15 @@ export default function Dashboard() {
           <button onClick={() => setActiveTab('option-entry')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'option-entry' ? 'bg-accent-50 text-accent-600 dark:bg-accent-900/30 dark:text-accent-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
             <ListChecks className="w-5 h-5" /><span>Option Entry</span>
           </button>
+
+          <a href="/contact" className="flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+            <Phone className="w-5 h-5" /><span>Contact Us</span>
+          </a>
           
-          {user?.email === 'admin@kcet.ai' && (
-            <button onClick={() => setActiveTab('admin')} className={`flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium transition-all duration-200 ${activeTab === 'admin' ? 'bg-danger/10 text-danger' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-              <Shield className="w-5 h-5" /><span>Admin Panel</span>
-            </button>
+          {user?.role === 'admin' && (
+            <a href="/admin" className="flex w-full items-center space-x-3 px-4 py-3 rounded-[12px] text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors">
+              <Shield className="w-5 h-5" /><span>Admin Console</span>
+            </a>
           )}
         </nav>
         
