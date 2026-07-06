@@ -6,7 +6,7 @@ def test_save_preferences(client):
     # Need to login first to get the token
     login_res = client.post(
         "/api/v1/auth/login",
-        data={"username": "teststudent@example.com", "password": "securepassword"}
+        data={"username": "teststudent@example.com", "password": "Securepassword123!"}
     )
     token = login_res.json()["access_token"]
     
@@ -33,7 +33,7 @@ def test_save_preferences(client):
 def test_get_preferences(client):
     login_res = client.post(
         "/api/v1/auth/login",
-        data={"username": "teststudent@example.com", "password": "securepassword"}
+        data={"username": "teststudent@example.com", "password": "Securepassword123!"}
     )
     token = login_res.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}

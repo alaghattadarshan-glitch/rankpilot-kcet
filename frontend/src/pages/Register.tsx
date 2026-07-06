@@ -13,6 +13,24 @@ export default function Register() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.');
+      return;
+    }
+    if (!password[0] || password[0] !== password[0].toUpperCase() || !/[a-zA-Z]/.test(password[0])) {
+      setError('Password must start with a capital letter.');
+      return;
+    }
+    if (!/\d/.test(password)) {
+      setError('Password must contain at least one number.');
+      return;
+    }
+    if (!/[^a-zA-Z0-9\s]/.test(password)) {
+      setError('Password must contain at least one special character.');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
