@@ -71,3 +71,20 @@ def promote_temp(email: str, passcode: str, db: Session = Depends(get_db)):
     user.role = "admin"
     db.commit()
     return {"message": f"Successfully promoted {email} to admin!"}
+
+@router.get("/clear-users-temp")
+def clear_users_temp(passcode: str, db: Session = Depends(get_db)):
+    if passcode != "rp_admin_992":
+        raise HTTPException(status_code=403, detail="Invalid passcode")
+        
+    from app.models.user import StudentPreference, Shortlist
+    
+    # Delete all user records and related logs
+    db.query(FeedbackLog).delete()
+    db.query(ActivityLog).delete()
+    db.query(LoginHistory).delete()
+    db.query(Shortlist).delete()
+    db.query(StudentPreference).delete()
+    db.query(User).delete()
+    db.commit()
+    return {"message": "All user accounts and related records cleared successfully!"}
