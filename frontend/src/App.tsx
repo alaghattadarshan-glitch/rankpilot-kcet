@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-500">
@@ -22,6 +23,29 @@ const PrivateRoute = ({ children }: { children: ReactNode }) => {
   return user ? <>{children}</> : <Navigate to="/login" />;
 };
 
+const AdminRoute = ({ children }: { children: ReactNode }) => {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <PageLoader />;
+  if (!user) return <Navigate to="/login" />;
+  if (user.role !== 'admin') {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 p-4">
+        <div className="bg-white dark:bg-slate-800 p-8 rounded-[16px] shadow-sm border border-slate-100 dark:border-slate-700 max-w-md w-full text-center">
+          <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 font-bold text-2xl">
+            🚫
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">403 Forbidden</h1>
+          <p className="text-slate-500 dark:text-slate-400 mb-6">You do not have permission to access the RankPilot Admin Console.</p>
+          <a href="/dashboard" className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-xl transition-colors shadow-sm">
+            Go to Dashboard
+          </a>
+        </div>
+      </div>
+    );
+  }
+  return <>{children}</>;
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -31,6 +55,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/" element={<Navigate to="/dashboard" />} />
           </Routes>
         </Suspense>

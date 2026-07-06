@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.models.user import User
+from app.models.user import User, LoginHistory
 from app.schemas.user import UserCreate, UserResponse, Token
 from app.core.security import get_password_hash, verify_password, create_access_token
+from datetime import datetime
 
 router = APIRouter()
 
@@ -27,7 +28,11 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
     return user_obj
 
 @router.post("/login", response_model=Token)
-def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+def login(
+    request: Request,
+    db: Session = Depends(get_db),
+    form_data: OAuth2PasswordRequestForm = Depends()
+):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(
@@ -35,6 +40,20 @@ def login(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = 
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    # Log successful login details
+    user.last_login = datetime.utcnow()
+    ip_addr = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    
+    login_log = LoginHistory(
+        user_id=user.id,
+        email=user.email,
+        ip_address=ip_addr,
+        user_agent=user_agent
+    )
+    db.add(login_log)
+    db.commit()
     
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}

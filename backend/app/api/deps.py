@@ -27,7 +27,7 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     return user
 
 def get_current_active_admin(current_user: User = Depends(get_current_user)) -> User:
-    if current_user.email != "admin@kcet.ai":
+    if current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="The user doesn't have enough privileges"

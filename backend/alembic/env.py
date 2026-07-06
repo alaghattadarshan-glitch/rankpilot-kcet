@@ -15,9 +15,10 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 from app.db.database import Base
-from app.models.user import User, StudentPreference, Shortlist
+from app.models.user import User, StudentPreference, Shortlist, LoginHistory, ActivityLog, FeedbackLog
 from app.models.college import College, Branch
 from app.models.cutoff import Cutoff, Placement, Fee
+from app.models.seat_matrix import SeatMatrix
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
