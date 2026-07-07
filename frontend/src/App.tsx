@@ -6,6 +6,8 @@ import type { ReactNode } from 'react';
 const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const ContactUs = lazy(() => import('./pages/ContactUs'));
@@ -64,6 +66,8 @@ function App() {
             <Route path="/" element={<PublicOnlyRoute><Landing /></PublicOnlyRoute>} />
             <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
             <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
+            <Route path="/forgot-password" element={<PublicOnlyRoute><ForgotPassword /></PublicOnlyRoute>} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/ai-mentor" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/career-mapping" element={<PrivateRoute><Dashboard /></PrivateRoute>} />

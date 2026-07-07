@@ -12,9 +12,11 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
     role = Column(String, default="user")
+    is_verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
-    
+
     preferences = relationship("StudentPreference", back_populates="user", uselist=False)
 
 class StudentPreference(Base):
@@ -52,6 +54,7 @@ class LoginHistory(Base):
     email = Column(String, nullable=False)
     ip_address = Column(String, nullable=True)
     user_agent = Column(String, nullable=True)
+    login_status = Column(String, default="success")  # success, failed
     login_time = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", backref="login_history_records")
@@ -135,3 +138,34 @@ class BranchRecommendationLog(Base):
 
     user = relationship("User", backref="branch_recommendation_logs_records")
 
+
+class EmailVerificationToken(Base):
+    """
+    Stores 6-digit OTP codes used to verify an email address before account creation.
+    Each token expires after 10 minutes.
+    """
+    __tablename__ = "email_verification_tokens"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    email = Column(String, index=True, nullable=False)
+    otp = Column(String, nullable=False)
+    is_verified = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=False)
+
+
+class PasswordResetToken(Base):
+    """
+    Stores secure tokens for password reset. Expires after 30 minutes.
+    """
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), index=True)
+    email = Column(String, index=True, nullable=False)
+    token = Column(String, unique=True, nullable=False)
+    is_used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=False)
+
+    user = relationship("User", backref="password_reset_tokens_records")
