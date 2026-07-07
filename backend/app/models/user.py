@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime, Integer, JSON, ForeignKey
+from sqlalchemy import Column, String, Boolean, DateTime, Integer, JSON, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 from datetime import datetime
@@ -89,3 +89,49 @@ class ContactInquiry(Base):
     message = Column(String, nullable=False)
     submitted_date = Column(DateTime, default=datetime.utcnow)
     status = Column(String, default="New") # New, Read, Replied, Closed
+
+class PDFReportLog(Base):
+    __tablename__ = "pdf_report_logs"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), index=True)
+    action = Column(String, nullable=False) # generate, download
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", backref="pdf_report_logs_records")
+
+class DatasetUpload(Base):
+    __tablename__ = "dataset_uploads"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    filename = Column(String, nullable=False)
+    dataset_type = Column(String, nullable=False) # mock, round1, round2, round3, colleges, placements, fees
+    year = Column(Integer, nullable=False)
+    upload_date = Column(DateTime, default=datetime.utcnow)
+    records_count = Column(Integer, default=0)
+    quality_score = Column(Float, default=100.0)
+    status = Column(String, default="pending") # pending, approved, rejected
+    preview_data = Column(JSON, nullable=True)
+
+class MentorChat(Base):
+    __tablename__ = "mentor_chats"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), index=True)
+    question = Column(String, nullable=False)
+    answer = Column(String, nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", backref="mentor_chats_records")
+
+class BranchRecommendationLog(Base):
+    __tablename__ = "branch_recommendation_logs"
+
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, ForeignKey("users.id"), index=True)
+    scores = Column(JSON, nullable=False) # JSON object
+    reasoning = Column(JSON, nullable=True) # JSON object
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", backref="branch_recommendation_logs_records")
+

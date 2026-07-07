@@ -3,18 +3,18 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { lazy, Suspense } from 'react';
 import type { ReactNode } from 'react';
 
+const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-
 const ContactUs = lazy(() => import('./pages/ContactUs'));
 
 const PageLoader = () => (
-  <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-500">
+  <div className="flex items-center justify-center h-screen bg-slate-50 dark:bg-slate-900 text-slate-500 transition-colors">
     <div className="flex flex-col items-center">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600 mb-4"></div>
-      <span>Loading Assistant...</span>
+      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
+      <span className="text-sm font-medium">Loading RankPilot...</span>
     </div>
   </div>
 );
@@ -48,18 +48,28 @@ const AdminRoute = ({ children }: { children: ReactNode }) => {
   return <>{children}</>;
 };
 
+// Redirect to dashboard if already logged in
+const PublicOnlyRoute = ({ children }: { children: ReactNode }) => {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <PageLoader />;
+  return user ? <Navigate to="/dashboard" /> : <>{children}</>;
+};
+
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<PublicOnlyRoute><Landing /></PublicOnlyRoute>} />
+            <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+            <Route path="/register" element={<PublicOnlyRoute><Register /></PublicOnlyRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/ai-mentor" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/career-mapping" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/branch-finder" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/contact" element={<ContactUs />} />
-            <Route path="/" element={<Navigate to="/dashboard" />} />
           </Routes>
         </Suspense>
       </Router>

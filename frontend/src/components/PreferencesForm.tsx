@@ -17,10 +17,16 @@ export default function PreferencesForm() {
     counselling_round: 'Mock'
   });
 
-  const categories = [
-    '1G', '1R', '1K', '2AG', '2AR', '2AK', '2BG', '2BR', '2BK', '3AG', '3AR', '3AK', '3BG', '3BR', '3BK', 'GM', 'GMR', 'GMK',
-    'SCG', 'SCR', 'SCK', 'S1G', 'S1R', 'S1K', 'S2G', 'S2R', 'S2K', 'S3G', 'S3R', 'S3K', 'S4G', 'S4R', 'S4K',
-    'STG', 'STR', 'STK'
+  const categoryGroups = [
+    { label: 'General Merit', options: ['GM', 'GMR', 'GMK'] },
+    { label: 'Category 1', options: ['1G', '1R', '1K'] },
+    { label: 'Category 2A', options: ['2AG', '2AR', '2AK'] },
+    { label: 'Category 2B', options: ['2BG', '2BR', '2BK'] },
+    { label: 'Category 3A', options: ['3AG', '3AR', '3AK'] },
+    { label: 'Category 3B', options: ['3BG', '3BR', '3BK'] },
+    { label: 'Scheduled Caste', options: ['SCG', 'SCR', 'SCK'] },
+    { label: 'SC (Sub-categories)', options: ['S1G', 'S1R', 'S1K', 'S2G', 'S2R', 'S2K', 'S3G', 'S3R', 'S3K', 'S4G', 'S4R', 'S4K'] },
+    { label: 'Scheduled Tribe', options: ['STG', 'STR', 'STK'] },
   ];
   const rounds = [
     { id: 'Mock', name: '2026 Mock Round' },
@@ -169,8 +175,12 @@ export default function PreferencesForm() {
               onChange={handleChange}
               className="mt-2 rankpilot-input"
             >
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
+              {categoryGroups.map(group => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.options.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </div>

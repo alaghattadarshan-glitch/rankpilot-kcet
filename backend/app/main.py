@@ -2,7 +2,7 @@ import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.v1.endpoints import auth, users, colleges, recommendations, analytics, admin, shortlist, contact
+from app.api.v1.endpoints import auth, users, colleges, recommendations, analytics, admin, shortlist, contact, mentor, career, reports
 from app.core.config import settings
 from app.db.database import Base, engine, SessionLocal
 from app.ai.engine import load_ml_assets
@@ -57,6 +57,9 @@ app.include_router(analytics.router, prefix=f"{settings.API_V1_STR}/analytics", 
 app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin", tags=["admin"])
 app.include_router(shortlist.router, prefix=f"{settings.API_V1_STR}/shortlist", tags=["shortlist"])
 app.include_router(contact.router, prefix=f"{settings.API_V1_STR}/contact", tags=["contact"])
+app.include_router(mentor.router, prefix=f"{settings.API_V1_STR}/mentor", tags=["mentor"])
+app.include_router(career.router, prefix=f"{settings.API_V1_STR}/career", tags=["career"])
+app.include_router(reports.router, prefix=f"{settings.API_V1_STR}/reports", tags=["reports"])
 
 @app.get("/")
 def root():

@@ -79,7 +79,7 @@ interface ContactInquiry {
 
 export default function AdminDashboard() {
   const { logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'feedback' | 'logins' | 'contacts' | 'health'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'feedback' | 'logins' | 'contacts' | 'health' | 'mentor' | 'reports' | 'datasets' | 'training' | 'branch_finder'>('analytics');
   
   // Data states
   const [users, setUsers] = useState<UserData[]>([]);
@@ -88,6 +88,18 @@ export default function AdminDashboard() {
   const [feedback, setFeedback] = useState<FeedbackLog[]>([]);
   const [contacts, setContacts] = useState<ContactInquiry[]>([]);
   const [systemHealth, setSystemHealth] = useState<any>(null);
+  
+  // New AI and Ingestion states
+  const [mentorStats, setMentorStats] = useState<any>(null);
+  const [reportStats, setReportStats] = useState<any>(null);
+  const [branchStats, setBranchStats] = useState<any>(null);
+  const [modelMetrics, setModelMetrics] = useState<any>(null);
+  const [datasetsList, setDatasetsList] = useState<any[]>([]);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadType, setUploadType] = useState('master_cutoffs');
+  const [isUploading, setIsUploading] = useState(false);
+  const [isRetraining, setIsRetraining] = useState(false);
+  const [retrainMsg, setRetrainMsg] = useState('');
   
   // UI states
   const [isLoading, setIsLoading] = useState(true);
@@ -109,13 +121,30 @@ export default function AdminDashboard() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [usersRes, analyticsRes, loginsRes, feedbackRes, contactsRes, healthRes] = await Promise.all([
+      const [
+        usersRes, 
+        analyticsRes, 
+        loginsRes, 
+        feedbackRes, 
+        contactsRes, 
+        healthRes,
+        mentorRes,
+        reportsRes,
+        branchRes,
+        modelRes,
+        datasetsRes
+      ] = await Promise.all([
         apiClient.get('/admin/users'),
         apiClient.get('/admin/analytics'),
         apiClient.get('/admin/logins'),
         apiClient.get('/admin/feedback'),
         apiClient.get('/admin/contacts'),
-        apiClient.get('/admin/system-health')
+        apiClient.get('/admin/system-health'),
+        apiClient.get('/mentor/analytics').catch(() => ({ data: null })),
+        apiClient.get('/reports/analytics').catch(() => ({ data: null })),
+        apiClient.get('/career/analytics').catch(() => ({ data: null })),
+        apiClient.get('/admin/model-training/metrics').catch(() => ({ data: null })),
+        apiClient.get('/admin/datasets/list').catch(() => ({ data: [] }))
       ]);
       setUsers(usersRes.data);
       setAnalytics(analyticsRes.data);
@@ -123,6 +152,12 @@ export default function AdminDashboard() {
       setFeedback(feedbackRes.data);
       setContacts(contactsRes.data);
       setSystemHealth(healthRes.data);
+      
+      if (mentorRes.data) setMentorStats(mentorRes.data);
+      if (reportsRes.data) setReportStats(reportsRes.data);
+      if (branchRes.data) setBranchStats(branchRes.data);
+      if (modelRes.data) setModelMetrics(modelRes.data);
+      if (datasetsRes.data) setDatasetsList(datasetsRes.data);
     } catch (err) {
       console.error('Error fetching admin dashboard data:', err);
     } finally {
@@ -172,6 +207,62 @@ export default function AdminDashboard() {
       fetchData();
     } catch (err: any) {
       alert(err.response?.data?.detail || "Failed to delete contact inquiry.");
+    }
+  };
+
+  const handleApproveDataset = async (id: string) => {
+    try {
+      await apiClient.post(`/admin/datasets/approve/${id}`);
+      alert("Dataset approved and ingested into main database storage!");
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to approve dataset");
+    }
+  };
+
+  const handleRejectDataset = async (id: string) => {
+    try {
+      await apiClient.post(`/admin/datasets/reject/${id}`);
+      alert("Dataset upload rejected and temporary files cleared.");
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to reject dataset");
+    }
+  };
+
+  const handleRetrainModel = async () => {
+    setIsRetraining(true);
+    setRetrainMsg('');
+    try {
+      await apiClient.post('/admin/model-training/retrain');
+      setRetrainMsg("Retraining process started successfully in a background task!");
+      setTimeout(() => {
+        fetchData();
+      }, 3000);
+    } catch (err: any) {
+      setRetrainMsg("Error launching retrain task.");
+    } finally {
+      setIsRetraining(false);
+    }
+  };
+
+  const handleUploadDataset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadFile) return;
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', uploadFile);
+    try {
+      await apiClient.post(`/admin/upload/${uploadType}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      alert("Dataset uploaded and logged in validation dashboard! Please review and click Approve to finish ingestion.");
+      setUploadFile(null);
+      fetchData();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Dataset upload failed validation checks.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -358,6 +449,66 @@ export default function AdminDashboard() {
           </button>
 
           <button
+            onClick={() => { setActiveTab('mentor'); setCurrentPage(1); }}
+            className={`flex w-full items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              activeTab === 'mentor'
+                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+            }`}
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span>AI Mentor Analytics</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('reports'); setCurrentPage(1); }}
+            className={`flex w-full items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              activeTab === 'reports'
+                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+            }`}
+          >
+            <Download className="w-5 h-5" />
+            <span>PDF Report Analytics</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('datasets'); setCurrentPage(1); }}
+            className={`flex w-full items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              activeTab === 'datasets'
+                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+            }`}
+          >
+            <Database className="w-5 h-5" />
+            <span>Dataset Management</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('training'); setCurrentPage(1); }}
+            className={`flex w-full items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              activeTab === 'training'
+                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+            }`}
+          >
+            <Activity className="w-5 h-5" />
+            <span>Model Training</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveTab('branch_finder'); setCurrentPage(1); }}
+            className={`flex w-full items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+              activeTab === 'branch_finder'
+                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50'
+            }`}
+          >
+            <Activity className="w-5 h-5" />
+            <span>Branch Quiz Analytics</span>
+          </button>
+
+          <button
             onClick={() => { setActiveTab('health'); setCurrentPage(1); }}
             className={`flex w-full items-center space-x-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
               activeTab === 'health'
@@ -392,6 +543,11 @@ export default function AdminDashboard() {
             {activeTab === 'contacts' && 'Contact Inquiries'}
             {activeTab === 'logins' && 'Security Audits'}
             {activeTab === 'health' && 'System Health & Dataset Status'}
+            {activeTab === 'mentor' && 'AI Mentor RAG Conversations'}
+            {activeTab === 'reports' && 'Counselling PDF Logs & Analytics'}
+            {activeTab === 'datasets' && 'Dataset Validation & Ingestion'}
+            {activeTab === 'training' && 'XGBoost Model Tuning & Retrain'}
+            {activeTab === 'branch_finder' && 'Branch Quiz Suitability Index'}
           </div>
           <div className="flex items-center gap-4">
             <span className="bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300 text-xs font-semibold px-3 py-1 rounded-full uppercase">
@@ -1067,6 +1223,317 @@ export default function AdminDashboard() {
                       )}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: AI MENTOR ANALYTICS */}
+            {activeTab === 'mentor' && mentorStats && (
+              <div className="space-y-8 animate-fadeIn">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <h3 className="text-md font-bold text-slate-400 uppercase tracking-wider mb-4">Total Questions Asked</h3>
+                    <h2 className="text-4xl font-extrabold text-blue-600 dark:text-blue-500 font-mono">{mentorStats.total_chats}</h2>
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <h3 className="text-md font-bold text-slate-400 uppercase tracking-wider mb-4">Topic Distribution</h3>
+                    <div className="h-44">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={mentorStats.topic_distribution}>
+                          <XAxis dataKey="name" stroke="#64748b" fontSize={10} />
+                          <YAxis stroke="#64748b" fontSize={10} />
+                          <Tooltip />
+                          <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                  <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+                    <h3 className="text-md font-bold text-slate-900 dark:text-white">Recent Student Queries</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-400 uppercase text-xs font-semibold">
+                          <th className="px-6 py-4">Student Email</th>
+                          <th className="px-6 py-4">Question</th>
+                          <th className="px-6 py-4">Asked On</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                        {mentorStats.recent_queries.map((q: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                            <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">{q.email}</td>
+                            <td className="px-6 py-4 text-slate-900 dark:text-white font-medium">{q.question}</td>
+                            <td className="px-6 py-4 text-xs text-slate-400">{new Date(q.timestamp).toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: PDF REPORT ANALYTICS */}
+            {activeTab === 'reports' && reportStats && (
+              <div className="space-y-8 animate-fadeIn">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <h3 className="text-md font-bold text-slate-400 uppercase tracking-wider mb-4 font-heading">Reports Compiled</h3>
+                    <h2 className="text-4xl font-extrabold text-blue-600 dark:text-blue-500 font-mono">{reportStats.generated_count}</h2>
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <h3 className="text-md font-bold text-slate-400 uppercase tracking-wider mb-4 font-heading">Reports Downloaded</h3>
+                    <h2 className="text-4xl font-extrabold text-indigo-600 dark:text-indigo-500 font-mono">{reportStats.downloaded_count}</h2>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                  <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+                    <h3 className="text-md font-bold text-slate-900 dark:text-white">Recent PDF Downloads</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-400 uppercase text-xs font-semibold">
+                          <th className="px-6 py-4">Student Email</th>
+                          <th className="px-6 py-4 text-center">Action Type</th>
+                          <th className="px-6 py-4">Downloaded On</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                        {reportStats.recent_downloads.map((l: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                            <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">{l.email}</td>
+                            <td className="px-6 py-4 text-center">
+                              <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 font-bold text-xs uppercase">
+                                {l.action}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-xs text-slate-400">{new Date(l.timestamp).toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: DATASET MANAGEMENT */}
+            {activeTab === 'datasets' && (
+              <div className="space-y-8 animate-fadeIn">
+                {/* Upload Form */}
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Ingest New Dataset</h3>
+                  <form onSubmit={handleUploadDataset} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Dataset Type</label>
+                        <select
+                          className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
+                          value={uploadType}
+                          onChange={(e) => setUploadType(e.target.value)}
+                        >
+                          <option value="colleges">Colleges (colleges.csv)</option>
+                          <option value="branches">Branches (branches.csv)</option>
+                          <option value="master_cutoffs">KEA Cutoff (master_cutoffs.csv)</option>
+                          <option value="fee_structure">KEA Fee (fee_structure.csv)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">CSV File Source</label>
+                        <input
+                          type="file"
+                          accept=".csv"
+                          onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                          className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isUploading || !uploadFile}
+                      className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs uppercase tracking-wide disabled:opacity-50"
+                    >
+                      {isUploading ? 'Validating CSV...' : 'Upload & Validate'}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Validation and Preview Ingestion Panel */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                  <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+                    <h3 className="text-md font-bold text-slate-900 dark:text-white">Dataset Quality &amp; Validation Log</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-400 uppercase text-xs font-semibold">
+                          <th className="px-6 py-4">Filename</th>
+                          <th className="px-6 py-4">Target Type</th>
+                          <th className="px-6 py-4 text-center">Row Count</th>
+                          <th className="px-6 py-4 text-center">Quality Score</th>
+                          <th className="px-6 py-4 text-center">Status</th>
+                          <th className="px-6 py-4 text-right">Approval Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                        {datasetsList.map((d: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                            <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">{d.filename}</td>
+                            <td className="px-6 py-4 font-medium text-slate-500 capitalize">{d.dataset_type}</td>
+                            <td className="px-6 py-4 text-center font-mono font-bold">{d.records_count}</td>
+                            <td className="px-6 py-4 text-center">
+                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                                d.quality_score >= 95 ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                              }`}>
+                                {d.quality_score}%
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className={`px-2.5 py-1 text-xs font-bold rounded capitalize ${
+                                d.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500' :
+                                d.status === 'rejected' ? 'bg-rose-500/10 text-rose-500' : 'bg-amber-500/10 text-amber-500'
+                              }`}>
+                                {d.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right space-x-2">
+                              {d.status === 'pending' ? (
+                                <>
+                                  <button
+                                    onClick={() => handleApproveDataset(d.id)}
+                                    className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold transition-all cursor-pointer"
+                                  >
+                                    Approve Ingestion
+                                  </button>
+                                  <button
+                                    onClick={() => handleRejectDataset(d.id)}
+                                    className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-bold transition-all cursor-pointer"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              ) : (
+                                <span className="text-xs text-slate-400">Processed</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: MODEL TRAINING */}
+            {activeTab === 'training' && modelMetrics && (
+              <div className="space-y-8 animate-fadeIn">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block font-heading">Mean Absolute Error (MAE)</span>
+                    <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1 font-mono">
+                      {modelMetrics.mae} Ranks
+                    </h3>
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block font-heading">Root Mean Squared Error (RMSE)</span>
+                    <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-1 font-mono">
+                      {modelMetrics.rmse}
+                    </h3>
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block font-heading">Model R² Fit Score</span>
+                    <h3 className="text-2xl font-extrabold text-emerald-500 mt-1 font-mono">
+                      {(modelMetrics.r2_score * 100).toFixed(2)}%
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white font-heading">Quantile Regression XGBoost Regressor</h3>
+                    <p className="text-xs text-slate-500">
+                      Training sample size: <strong className="text-slate-800 dark:text-slate-200">{modelMetrics.records_count.toLocaleString()} rows</strong> | Model Version: <strong className="text-slate-800 dark:text-slate-200">{modelMetrics.model_version}</strong>
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      Last retrained on: <strong>{modelMetrics.last_training_date}</strong>
+                    </p>
+                  </div>
+                  <div className="shrink-0 flex flex-col items-center gap-2">
+                    <button
+                      onClick={handleRetrainModel}
+                      disabled={isRetraining}
+                      className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-wider disabled:opacity-50 transition-all cursor-pointer shadow-lg shadow-blue-500/10 font-heading"
+                    >
+                      {isRetraining ? 'Retraining Models...' : 'One-Click Model Retrain'}
+                    </button>
+                    {retrainMsg && <span className="text-xs font-bold text-blue-500">{retrainMsg}</span>}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: BRANCH QUIZ ANALYTICS */}
+            {activeTab === 'branch_finder' && branchStats && (
+              <div className="space-y-8 animate-fadeIn">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <h3 className="text-md font-bold text-slate-400 uppercase tracking-wider mb-4 font-heading">Total Quiz Submissions</h3>
+                    <h2 className="text-4xl font-extrabold text-blue-600 dark:text-blue-500 font-mono">{branchStats.total_submissions}</h2>
+                  </div>
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
+                    <h3 className="text-md font-bold text-slate-400 uppercase tracking-wider mb-4 font-heading">Average Branch Suitability</h3>
+                    <div className="h-44">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={branchStats.branch_averages}>
+                          <XAxis dataKey="branch" stroke="#64748b" fontSize={9} />
+                          <YAxis stroke="#64748b" fontSize={10} />
+                          <Tooltip />
+                          <Bar dataKey="average_score" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden">
+                  <div className="p-6 border-b border-slate-100 dark:border-slate-700">
+                    <h3 className="text-md font-bold text-slate-900 dark:text-white">Recent Suitability Profiles</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-slate-400 uppercase text-xs font-semibold">
+                          <th className="px-6 py-4">Student Email</th>
+                          <th className="px-6 py-4">Top Matches</th>
+                          <th className="px-6 py-4">Completed On</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
+                        {branchStats.recent_submissions.map((r: any, idx: number) => {
+                          const topMatches = Object.entries(r.scores)
+                            .sort((a: any, b: any) => b[1] - a[1])
+                            .slice(0, 3)
+                            .map(([k, v]) => `${k} (${v}%)`)
+                            .join(', ');
+                          return (
+                            <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                              <td className="px-6 py-4 font-bold text-slate-700 dark:text-slate-300">{r.email}</td>
+                              <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">{topMatches}</td>
+                              <td className="px-6 py-4 text-xs text-slate-400">{new Date(r.timestamp).toLocaleString()}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}

@@ -3,36 +3,143 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    @apply scroll-smooth;
+  }
   html, body {
-    @apply font-sans bg-surface-hover text-slate-900 transition-colors duration-300;
+    @apply font-sans bg-slate-50 text-slate-900 transition-colors duration-300 selection:bg-blue-500 selection:text-white;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading tracking-tight;
   }
   
   .dark body {
-    @apply bg-slate-900 text-slate-50;
+    @apply bg-[#090a0f] text-slate-100;
   }
 }
 
 @layer components {
   .rankpilot-card {
-    @apply bg-surface rounded-[20px] p-6 shadow-soft border border-slate-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-hover;
+    @apply bg-white dark:bg-[#11131d] rounded-[24px] p-6 shadow-[0_4px_20px_rgba(0,0,0,0.04)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.4)] border border-slate-200/80 dark:border-slate-800/80 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_12px_30px_rgba(0,0,0,0.6)] dark:hover:border-slate-700/80;
   }
   
-  .dark .rankpilot-card {
-    @apply bg-slate-800 border-slate-700 shadow-none hover:bg-slate-800/90;
+  .rankpilot-card-glass {
+    @apply bg-white/80 dark:bg-[#11131d]/80 backdrop-blur-xl rounded-[24px] p-6 border border-white/20 dark:border-slate-800/80 shadow-lg transition-all duration-300;
   }
 
   .rankpilot-input {
-    @apply w-full rounded-[16px] border border-slate-200 px-4 py-3 shadow-sm focus:border-primary-500 focus:ring-primary-500 bg-white transition-all duration-200;
-  }
-
-  .dark .rankpilot-input {
-    @apply bg-slate-800 border-slate-700 text-white focus:border-primary-500 focus:ring-primary-500;
+    @apply w-full rounded-[16px] border border-slate-200/80 dark:border-slate-800 px-4 py-3 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none bg-white dark:bg-[#161824] text-slate-900 dark:text-white transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-slate-500;
   }
 
   .rankpilot-button {
-    @apply flex items-center justify-center rounded-[16px] font-semibold transition-all duration-200 hover:scale-[1.03] active:scale-95 disabled:opacity-50 disabled:hover:scale-100;
+    @apply inline-flex items-center justify-center rounded-[16px] font-semibold text-sm transition-all duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-sm cursor-pointer select-none;
+  }
+
+  .badge-safe {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.15)];
+  }
+
+  .badge-moderate {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.15)];
+  }
+
+  .badge-dream {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shadow-[0_0_12px_rgba(244,63,94,0.15)];
+  }
+}
+
+/* Custom animations & Shimmer */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.dark .skeleton-shimmer {
+  @apply bg-slate-800/80 animate-shimmer relative overflow-hidden;
+}
+
+.skeleton-shimmer {
+  @apply bg-slate-200/80 animate-shimmer relative overflow-hidden;
+}
+
+/* Stagger children animations */
+.stagger-children > * {
+  opacity: 0;
+  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.stagger-children > *:nth-child(1) { animation-delay: 0.04s; }
+.stagger-children > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger-children > *:nth-child(3) { animation-delay: 0.12s; }
+.stagger-children > *:nth-child(4) { animation-delay: 0.16s; }
+.stagger-children > *:nth-child(5) { animation-delay: 0.20s; }
+.stagger-children > *:nth-child(6) { animation-delay: 0.24s; }
+
+/* Custom Scrollbar for SaaS clean look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-800 rounded-full hover:bg-slate-400 dark:hover:bg-slate-700 transition-colors;
+}
+
+/* Print styles for OptionEntry */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  .rankpilot-card {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
   }
 }

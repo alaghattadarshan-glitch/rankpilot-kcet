@@ -385,3 +385,81 @@ def get_round_comparison(db: Session, user_id: str):
         }
 
     return comparison_results
+
+
+def get_option_strategies(db: Session, user_id: str):
+    # Retrieve base recommendations
+    recs_dict = get_recommendations(db, user_id)
+    all_recs = recs_dict.get("all_recommendations", [])
+    
+    # Sort recommendations by ranking score
+    safe_list = [r for r in all_recs if r['type'] == 'safe']
+    moderate_list = [r for r in all_recs if r['type'] == 'moderate']
+    dream_list = [r for r in all_recs if r['type'] == 'dream']
+    
+    # Calculate admission probability helper
+    pref = db.query(StudentPreference).filter(StudentPreference.user_id == user_id).first()
+    R = pref.kcet_rank if (pref and pref.kcet_rank) else 10000
+    
+    def add_probability(item):
+        # Extract predicted range or latest_cutoff
+        latest = item.get('latest_cutoff', 10000)
+        t = item.get('type', 'moderate')
+        
+        # Calculate dynamic percentage based on rank distance
+        if t == 'safe':
+            pct = min(99, max(80, int(80 + ((latest - R) / max(1, latest)) * 19)))
+        elif t == 'moderate':
+            pct = min(79, max(45, int(45 + ((latest - R) / max(1, latest)) * 34)))
+        else:
+            pct = min(44, max(5, int(25 + ((latest - R) / max(1, R)) * 19)))
+            
+        return {
+            **item,
+            "admission_probability": pct
+        }
+
+    # Format lists
+    safes = [add_probability(r) for r in safe_list]
+    moderates = [add_probability(r) for r in moderate_list]
+    dreams = [add_probability(r) for r in dream_list]
+
+    # Strategy 1: Conservative Strategy (High probability focus, 80% Safe, 20% Moderate, 0% Dream)
+    conservative_list = safes[:15] + moderates[:5]
+    for idx, item in enumerate(conservative_list):
+        item["priority"] = idx + 1
+        
+    # Strategy 2: Balanced Strategy (Standard mix, 40% Safe, 40% Moderate, 20% Dream)
+    balanced_list = dreams[:4] + moderates[:10] + safes[:8]
+    for idx, item in enumerate(balanced_list):
+        item["priority"] = idx + 1
+        
+    # Strategy 3: Aggressive Strategy (High risk/reward, 70% Dream, 20% Moderate, 10% Safe)
+    aggressive_list = dreams[:12] + moderates[:6] + safes[:2]
+    for idx, item in enumerate(aggressive_list):
+        item["priority"] = idx + 1
+
+    return {
+        "conservative": {
+            "strategy_name": "Conservative Strategy",
+            "description": "Recommended for securing admission. Prioritizes safe, historically-proven options.",
+            "options": conservative_list,
+            "success_rate": 95,
+            "mix": {"safe": 80, "moderate": 20, "dream": 0}
+        },
+        "balanced": {
+            "strategy_name": "Balanced Strategy",
+            "description": "Highly recommended default. Balances dreams with solid safety options.",
+            "options": balanced_list,
+            "success_rate": 78,
+            "mix": {"safe": 35, "moderate": 45, "dream": 20}
+        },
+        "aggressive": {
+            "strategy_name": "Aggressive Strategy",
+            "description": "Recommended if you are willing to risk round progression to secure a dream college.",
+            "options": aggressive_list,
+            "success_rate": 45,
+            "mix": {"safe": 10, "moderate": 30, "dream": 60}
+        }
+    }
+

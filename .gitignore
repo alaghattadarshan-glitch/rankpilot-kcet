@@ -5,6 +5,7 @@ backend/venv/
 __pycache__/
 *.pyc
 *.csv
+*.db
 .DS_Store
 dist/
 build/

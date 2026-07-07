@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.user import User, ActivityLog, FeedbackLog
 from app.api.deps import get_current_user
-from app.services.recommendation import get_recommendations, get_round_comparison
+from app.services.recommendation import get_recommendations, get_round_comparison, get_option_strategies
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -76,3 +76,16 @@ def record_recommendation_feedback(
     db.commit()
     
     return {"message": "Feedback recorded successfully"}
+
+
+@router.get("/strategies")
+def read_option_strategies(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Log option strategies query
+    act_log = ActivityLog(user_id=current_user.id, activity_type="option_strategies")
+    db.add(act_log)
+    db.commit()
+    return get_option_strategies(db, current_user.id)
+
