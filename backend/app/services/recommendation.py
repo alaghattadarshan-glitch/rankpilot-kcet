@@ -142,15 +142,16 @@ def get_recommendations(db: Session, user_id: str = None, test_rank: int = None,
         
         distr = college_map[c_code].district
         
-        # Predict Cutoff Range using XGBoost Quantile Models
+        # Predict Cutoff Range using XGBoost Quantile Models (or statistical fallback)
         range_min, predicted_baseline, range_max = predict_cutoff(
-            year=2026, 
-            round_name=selected_round, 
-            college_code=c_code, 
-            branch_code=b_code, 
-            category=category, 
-            district=distr, 
-            prev_cutoff=latest_cutoff
+            year=2026,
+            round_name=selected_round,
+            college_code=c_code,
+            branch_code=b_code,
+            category=category,
+            district=distr,
+            prev_cutoff=latest_cutoff,
+            all_historical=all_rounds,   # ← enables meaningful statistical range
         )
         
         predicted_range = f"{range_min} - {range_max}"
